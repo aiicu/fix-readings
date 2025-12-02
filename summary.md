@@ -6,6 +6,8 @@
 
 AI+个人修正详细理解：[cooper-reading](2025.9.22-cooper\reading.md) 
 
+AI翻译：[cooper_chinese](2025.9.22-cooper\cooper_chinese.md) 
+
 
 
 ##### 简要理解
@@ -35,6 +37,8 @@ Sparse Convolutional Middle Layers：由于体素化后的数据中绝大多数�
 论文：  [Who2com.pdf](2025.9.23-Who2com\Who2com.pdf) 
 
 AI+个人修正详细理解： [Who2com-reading](2025.9.23-Who2com\reading.md) 
+
+AI翻译：[Who2com_chinese](2025.9.23-Who2com\Who2com_chinese.md) 
 
 
 
@@ -76,8 +80,7 @@ AI翻译：[When2com_chinese](2025.9.26-When2com\When2com_chinese.md)
 
   * 决定与谁通信 (Who)：计算智能体 $i$ 的 Query 与其他智能体 $j$ 的 Key 之间的相似度 $m_{i,j}$，具体见公式2（通用注意力），相似度信息会全部互相发送。如果匹配分数高，说明智能体 $j$ 能提供有用的信息。
     
-
-  * 决定何时通信 (When)：计算智能体自身的 Query 与自身的 Key 的相似度 $m_{i,i}$。如果自身匹配分数高，说明自身信息已足够，无需进行外部通信。
+* 决定何时通信 (When)：计算智能体自身的 Query 与自身的 Key 的相似度 $m_{i,i}$。如果自身匹配分数高，说明自身信息已足够，无需进行外部通信。
 
 * **选择 (Select)**：利用前面计算的相似度，修剪掉低分数的连接，构建稀疏的通信图。
   - 通信图 $\bar{M}$ ：将相似度 $m_{i,j}$ 全部结果收集，取softmax，构造出匹配矩阵 $M$ (具体见公式5)，最后取一个阈值 $\delta$ ，$M$ 小于这个阈值 $\delta$ 的元素都置为0，得到新矩阵 $\bar{M}$ ，所得矩阵 $\bar{M}$ 可视为有向图的邻接矩阵，其元素表示何时通信，元素为零表示不与之通信。（可以看图4，很好理解）
