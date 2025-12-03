@@ -53,11 +53,13 @@ COOPERNAUT：基于网联车辆协作感知的端到端驾驶
 我们模型的主干是 Point Transformer，这是一种新开发的神经网络结构，可以从 3D 点云中学习紧凑的基于点的表示。它推理点之间的非局部相互作用并生成置换不变（permutation-invariant）的表示，使其能够有效地聚合多车点云。这里我们简要回顾一下 Point Transformers。
 
 我们采用与 Zhao 等人相同的设计，使用向量自注意力来构建 Point Transformer 层。我们还在特征之间应用减法，并将位置编码函数 $\delta$ 附加到注意力向量 $\gamma$ 和变换后的特征 $\alpha$ 上：
-$$y_{i}=\sum_{x_{j}\in\mathcal{X}(i)}\rho(\gamma(\phi(x_{i})-\psi(x_{j})+\delta))\odot(\alpha(x_{j})+\delta)$$
-(1)
+$$
+y_{i}=\sum_{x_{j}\in\mathcal{X}(i)}\rho(\gamma(\phi(x_{i})-\psi(x_{j})+\delta))\odot(\alpha(x_{j})+\delta) \tag{1}
+$$
 这里 $x_{i}$ 和 $x_{j}$ 分别是点 $i$ 和 $j$ 的输入特征，$y_{i}$ 是点 $i$ 的输出注意力特征，$\mathcal{X}(i)$ 代表 $x_{i}$ 邻域内的点集；$\phi,\psi$ 和 $\alpha$ 是逐点特征变换（MLP）；$\gamma$ 是一个具有两层和一个 ReLU 非线性的 MLP 映射函数；$\delta$ 是位置编码函数，$\rho$ 是归一化函数 softmax。给定点 $i$ 和 $j$ 的 3D 坐标 $p_{i}, p_{j}\in\mathbb{R}^{3}$，位置编码函数公式如下：
-$$\delta=\theta(p_{i}-p_{j})$$
-(2)
+$$
+\delta=\theta(p_{i}-p_{j}) \tag{2}
+$$
 其中 $\theta$ 是一个具有两个线性层和一个 ReLU 的 MLP。
 
 Point Transformer 块如图 2 所示，它集成了自注意力层、线性投影和残差连接。输入是一组 3D 点 $p$ 以及每个点的特征 $x$。该块使得点之间能够进行局部信息交换，并为每个点生成新的特征向量。图 2 中的下采样块用于减少点集的基数。我们对输入集执行最远点采样 (Farthest Point Sampling) 以获得分布良好的子集，然后使用 kNN 图和邻域内的（局部）最大池化将信息进一步压缩到更小的点集。输出是具有新特征的原始输入点的子集。
@@ -81,15 +83,19 @@ Point Transformer 块如图 2 所示，它集成了自注意力层、线性投�
 
 #### 3.4. 策略学习
 
-我们使用 DAgger 训练我们的模型以模仿拥有特权信息的专家策略。为了热启动策略学习，我们首先使用行为克隆（Behavior Cloning）训练模型。
+我们使用 DAgger 训练我们的模型，以模仿利用特权信息的专家策略。为了预热策略学习，我们首先使用行为克隆（Behavior Cloning）来训练模型。 
 
-**Behavior Cloning（行为克隆）。** 行为克隆旨在最小化训练策略与专家策略之间的分布差距。目标是找到一个最优策略 $\pi_{\theta}$，使得相对于专家策略 $\pi_{expert}$ 在其诱导的状态分布 $S \sim P(\pi_{expert})$ 下的损失最小化，即：
-$$\theta^{*} = \arg \min_{\theta} E_{S \sim P(\pi_{expert})} [l_{control} (\pi_{\theta}(S), \pi_{expert}(S))]$$
-(3)
-目标函数 $l_{control}$ 是策略动作与专家动作之间油门、刹车和转向的 $l_{1}$ 损失的线性组合：
-$$l_{control}=\eta_{1}l_{throttle}+\eta_{2}l_{brake}+\eta_{3}l_{steer}$$
-(4)
-其中 $\eta_{1}, \eta_{2}, \eta_{3}$ 是每个动作损失的系数。在我们的实验中，所有三个系数都设置为 1。
+**行为克隆** (Behavior Cloning) ：行为克隆旨在最小化训练策略与专家策略之间的分布差异。其目标是找到一个最优策略 $\hat{\pi}$，使得在专家策略 $\pi_{expert}$ 所诱导的状态分布 $S^*$ 下的损失最小化。
+
+ 
+$$
+\hat{\pi} = \mathop{\arg\min}_{\pi} \mathbb{E}_{s \sim S^*} [l_{control} (\pi(s), \pi_{expert}(s))] \quad  \tag{3}
+$$
+目标函数 $l_{control}$ 是策略动作与专家动作之间油门、刹车和转向的 $L_1$-Loss 的线性组合：
+$$
+l_{control}=\eta_{1}l_{throttle}+\eta_{2}l_{brake}+\eta_{3}l_{steer} \tag{4}
+$$
+其中 $\eta_{1}, \eta_{2}, \eta_{3}$​ 是每个动作损失的系数。在我们的实验中，所有三个系数都设置为 1。
 
 **DAgger。** Codevilla 等人讨论了行为克隆在自动驾驶中的局限性。DAgger 通过在线训练解决了协变量偏移（covariance shift）问题。核心思想是让学生策略与环境互动，并在专家监督下记录专家在学生访问的相同状态下的动作。训练数据集是迭代聚合的，使用学生和专家动作的混合。第 $i$ 次迭代的采样策略 $\pi_{sample,i}$ 如下：
 $$
@@ -97,8 +103,9 @@ $$
 \pi_{expert}, & \text{w.p. } \beta_{i} \\
 \pi_{student}, & \text{w.p. } 1-\beta_{i}
 \end{cases}
+
+\tag{5}
 $$
-(5)
 其中 $\beta_{i}=\beta_{0}\times\beta_{i-1}^{i}$ 是从初始 $\beta_{0}$ 指数递减的，代表在第 $i$ 次迭代中执行专家动作的概率。
 
 

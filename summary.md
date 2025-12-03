@@ -195,3 +195,51 @@ AI翻译：[FPV-RCNN_chinese](2025.12.1-FPV-RCNN\FPV-RCNN_chinese.md)
 
 
 #### Coopernaut
+
+##### 文档
+
+论文：  [Coopernaut.pdf](2025.12.2-Coopernaut\Coopernaut.pdf) 
+
+AI+个人修正详细理解： [Coopernaut-reading](2025.12.2-Coopernaut\reading.md) 
+
+AI翻译：[Coopernaut_chinese](2025.12.2-Coopernaut\Coopernaut_chinese.md) 
+
+
+
+##### 简要理解
+
+这篇文章介绍了 **COOPERNAUT**，一种用于网联车辆的端到端协作驾驶模型，作用如下
+
+- 限制传输的数据量，模型类似Transfomer，应用与点云模型
+- 介绍一种训练模型的方法，先根据全知视角的正确答案做决策，再逐渐转变为根据现实世界的有限信息推导的答案做决策，参数都拟合全知视角
+
+解释：
+
+- **COOPERNAUT**：见图2，核心特征融合框架，从左到右过程如下
+  1. 点云提取，取 $N$ 个点云数据，一个点包含3个元素，用于记录坐标，
+  2. **Point Encoder**：处理点云的编码器，保留关键空间信息
+  3. 信息发送：CAV 发送信息，信息有两部分，Point Encoder 提取出的信息 和 点的坐标，点坐标用于坐标转换，因为 ego 和 CAV 点云坐标系不同。为了满足带宽限制，限制 CAV 发送的点的个数上限，限制 ego 可以接收信息的 CAV 的个数。
+  4. 信息聚合：先聚合多辆CAV的信息，直接Voxel Pooling，最后和 ego 信息直接拼接
+  5. **Rep Aggregator**：类似 Point Encoder 再聚合提炼点云信息
+  6. Control Module：回归，作决策
+- 训练方法：见3.4节
+  - Behavior Cloning：让模型由专家（完全正确的路线）做决策，参数拟合专家
+  - DAgger：让模型按概率选择 专家做决策 或者 学生做决策（局限的视角，只能看到发送到自车的CAV信息），都拟合专家的正确决策，选择学生做决策的概率越来越高，见公式（5）
+  - 先Behavior Cloning，再DAgger
+
+
+
+#### CoBEVT
+
+##### 文档
+
+论文：  [CoBEVT.pdf](2025.12.3-CoBEVT\CoBEVT.pdf) 
+
+AI+个人修正详细理解： [CoBEVT-reading](2025.12.3-CoBEVT\reading.md) 
+
+AI翻译：[CoBEVT_chinese](2025.12.3-CoBEVT\CoBEVT_chinese.md) 
+
+
+
+##### 简要理解
+
