@@ -1,3 +1,11 @@
+#### Task
+
+论文：[面向智能网联汽车的车路协同感知技术及发展趋势.pdf](2025.9.7-论文搜集\面向智能网联汽车的车路协同感知技术及发展趋势.pdf) 
+
+总结：[col.md](2025.9.7-论文搜集\col.md) 
+
+
+
 #### Cooper
 
 ##### 文档
@@ -243,3 +251,34 @@ AI翻译：[CoBEVT_chinese](2025.12.3-CoBEVT\CoBEVT_chinese.md)
 
 ##### 简要理解
 
+最重要是提出了融合轴向注意力 Fused Axial Attention (FAX) 机制，借助图2理解
+
+FAX分两种Attention，Local Attention 和 Global Attention
+
+- Local Attention：
+  - 做法：把图按空间分块，按空间顺序组合块，理解块内关系，见 图2 的红色块
+  - 作用：可以理解细节，理解一整块
+- Global Attention：
+  - 做法：把图按空间分块，取每块的第(x,y)个像素组成一组，理解组内关系，见 图2 的蓝色块
+  - 作用：组是离散的，与全图每一块有关的，可以理解整体关系。如图2(b)，组的关系可以帮助不同传感器的图对正位置
+
+造成两者效果不同的本质原因是，**数据排列不同了**，具体如何变的见 reading
+
+
+
+CoBEVT各子块的理解，借助图3理解
+
+- FuseBEVT：应用于融合，正常过 FAX 和 FFN 线性层
+- SinBEVT：应用于单车提取信息，由FuseBEVT改进
+  - 把 FAX 的 K,V 输入改成 原始的相机图像提取的特征图，因为在单车里有原始图像信息，比BEV信息的分辨率更高，最终效果更好
+  - 把 FFN 改成 Conv 卷积，降低传输的图像大小，多尺度提取特征
+
+
+
+#### V2XP-ASG
+
+论文： [V2XP-ASG.pdf](2025.12.6-V2XP-ASG\V2XP-ASG.pdf) 
+
+AI+个人修正详细理解： [V2XP-ASG-reading](2025.12.6-V2XP-ASG\reading)
+
+AI翻译：[V2XP-ASG_chinese](2025.12.6-V2XP-ASG\V2XP-ASG_chinese.md) 
