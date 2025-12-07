@@ -225,12 +225,12 @@ AI翻译：[Coopernaut_chinese](2025.12.2-Coopernaut\Coopernaut_chinese.md)
 
 - **COOPERNAUT**：见图2，核心特征融合框架，从左到右过程如下
   1. 点云提取，取 $N$ 个点云数据，一个点包含3个元素，用于记录坐标，
-  2. **Point Encoder**：处理点云的编码器，保留关键空间信息
+  2. **Point Encoder**：处理点云的编码器，保留关键空间信息，内部带Point Transformer
   3. 信息发送：CAV 发送信息，信息有两部分，Point Encoder 提取出的信息 和 点的坐标，点坐标用于坐标转换，因为 ego 和 CAV 点云坐标系不同。为了满足带宽限制，限制 CAV 发送的点的个数上限，限制 ego 可以接收信息的 CAV 的个数。
   4. 信息聚合：先聚合多辆CAV的信息，直接Voxel Pooling，最后和 ego 信息直接拼接
   5. **Rep Aggregator**：类似 Point Encoder 再聚合提炼点云信息
   6. Control Module：回归，作决策
-- 训练方法：见3.4节
+- **训练方法**：见3.4节
   - Behavior Cloning：让模型由专家（完全正确的路线）做决策，参数拟合专家
   - DAgger：让模型按概率选择 专家做决策 或者 学生做决策（局限的视角，只能看到发送到自车的CAV信息），都拟合专家的正确决策，选择学生做决策的概率越来越高，见公式（5）
   - 先Behavior Cloning，再DAgger
@@ -277,8 +277,73 @@ CoBEVT各子块的理解，借助图3理解
 
 #### V2XP-ASG
 
+##### 文档
+
 论文： [V2XP-ASG.pdf](2025.12.6-V2XP-ASG\V2XP-ASG.pdf) 
 
 AI+个人修正详细理解： [V2XP-ASG-reading](2025.12.6-V2XP-ASG\reading)
 
 AI翻译：[V2XP-ASG_chinese](2025.12.6-V2XP-ASG\V2XP-ASG_chinese.md) 
+
+
+
+##### 简要理解
+
+本文用 V2XP-ASG 方法生成对抗性（协作效果最差）环境，方法分为两个核心部分：
+
+- **Adversarial Collaborator Search (ACS)** ：找出导致系统性能最差的**协作**组合
+- **Adversarial Perturbation Search (APS)** ：找出导致系统性能最差的**位置扰动**组合
+
+生成对抗性环境，把对抗性环境应用于模型训练，可以**提升模型训练效果**
+
+
+
+过程：
+
+- Adversarial Collaborator Search：
+
+  - 环境：全部车配备雷达点云传感器，发送中间特征 $H_i \in R^{H \times W \times C}$ 给自车
+  - 更新特征：根据所有的 $N$ 辆车的中间特征 $H$ 在ego坐标系下的位置 $(m,n)$ 的特征 $h_{m,n} \in R^{N \times C}$ ，用 self-attention 来捕获 ego 坐标系下同一空间位置不同智能体的注意力权重 $a_{m,n}$，见公式5，获取更新后的特征 $H^{'}$
+  - **获取弱点**：
+    - 单体重要性 $s_j$ ：根据公式 6 对注意力权重 $a_{m,n}$ 取全坐标平均，计算智能体 $j$ 的重要性 $s_j$ 
+    - 单体弱点：定义重要性的倒数 $1/s_j$ 即为弱点
+    - 组合弱点 $w_{\mathcal{I}}$ ：根据公式 7 ，计算每一个大小为 $k$ 的协同组合 $\mathcal{I}$ 的总弱点分数
+  - 构建对抗性协作图：
+    - 生成概率分布：根据公式 8 对组合弱点取softmax，得到采样概率分布 $p$ 。弱点越大的组合，采样概率越高
+    - **选择 $\mathcal{I}^*$** ：根据概率 $p$ 不放回采样 $k_0$ 个组合，检测对抗性目标值，保留对抗性损失最低（攻击效果最好）的组合作为最终的对抗性协作组合 $\mathcal{I}^*$
+    - 建图：最终使用这个选定的组合 $\mathcal{I}^{*}$ 构建对抗性协作图，仅允许这些被选中的“弱”智能体与自车共享信息。
+
+- Adversarial Perturbation Search
+
+  - 扰动定义：$\delta_i=(\delta x_i,\delta y_i, \delta \theta_i)$ ，前面是坐标扰动，后面是朝向角度扰动，多智能体扰动就是 $\Delta = \{ \delta_1,\delta_2,...,\delta_m \}$，本文取 $m=3$
+
+  - 遮挡水平：
+
+    - 定义：
+      1. 内在遮挡分数：自身被其他某辆车遮挡，得一分
+      2. 外在遮挡分数：自身遮挡其他车，根据遮挡的车的个数计分
+    - 作用：选取最高的 $m$ 个遮挡水平的智能体**应用扰动**
+    - 如此作用的原因：通过这种方式选出的车辆，更有可能处于视觉盲区边缘或导致盲区，微调它们最容易引起感知的混乱
+
+  - 合法扰动集合 $Q$ ：限制扰动范围，均匀生成扰动，检查 $Q$ 去除非法样本（例如可能导致碰撞）
+
+  - 生成候选扰动 $\Delta$ ：用黑盒搜索算法（如贝叶斯优化 BO、遗传算法 GA 或随机搜索 RS）根据历史数据 $\mathcal{D}$，“猜测”并生成一个新的潜在扰动 $\Delta$。**这个潜在扰动投影到 $Q$ 里最近的元素，用这个最近的元素更新覆盖 $\Delta$**，这么做可以快速选出合法扰动
+
+  - **选择 $\Delta^*$** ：根据候选扰动 $\Delta$ 计算对抗损失，计入历史记录 $D$ ，最后选取对抗损失最低（攻击最好）对应的 $\Delta$ 作为 $\Delta^*$
+
+    
+
+#### V2X-ViT
+
+##### 文档
+
+论文： [V2X-ViT.pdf](2025.12.7-V2X-ViT\V2X-ViT.pdf) 
+
+AI+个人修正详细理解： [V2X-ViT-reading](2025.12.7-V2X-ViT\reading)
+
+AI翻译：[V2X-ViT_chinese](2025.12.7-V2X-ViT\V2X-ViT_chinese.md) 
+
+
+
+##### 简要理解
+
