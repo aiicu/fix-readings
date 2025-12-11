@@ -339,7 +339,7 @@ AI翻译：[V2X-ViT_chinese](2025.12.7-V2X-ViT\V2X-ViT_chinese.md)
 
 ##### 简要理解
 
-提出V2X感知框架，环境有时延，位姿有错误。
+提出V2X感知框架，环境有时延，位姿有错误，智能体异构（有车和路边设施）
 
 - 特征融合以外的优化：
   - 元数据共享：部分数据大小很小，如位姿，这些元数据的传输是可以良好同步的，智能体可以互相共享元数据，具体是其他智能体接收到 ego 位姿后，讲自己的 LiDAR 点云**投影到自车坐标系**
@@ -374,3 +374,35 @@ AI翻译：[MMVR_chinese](2025.12.8-MMVR\MMVR_chinese.md)
 
 
 ##### 简要理解
+
+本文优化：
+
+- Multi-Model Virtual-Real Fusion：优化LiDAR点云信息，通过RGB图给实例的点云加点
+- Heterogeneous Graph Attention Network：同 V2X-ViT，解决智能体异构的中期融合
+
+
+
+具体解释：
+
+- **Multi-Model Virtual-Real Fusion**
+  - 作用：在LiDAR点云中给 实例 添加虚拟点，让 实例 拥有的点相对密集，更容易被 PointPillars 捕捉
+  - 方法：有RGB图，RGB 图像分辨率高、纹理丰富，先跑 2D 检测算法，获取掩码 $M_{x,b} $ （第x张RGB图第b个检测对象）。有点云信息，把点云映射到RGB图上，根据落入掩码的点生成虚拟点，具体生成方法见 2.A节 最后一段
+
+
+
+
+
+#### DAIR-V2X
+
+##### 文档
+
+论文： [DAIR-V2X.pdf](2025.12.11-DAIR-V2X\DAIR-V2X.pdf) 
+
+AI+个人修正详细理解： [MMVR-reading](2025.12.8-MMVR\reading)
+
+AI翻译：[MMVR_chinese](2025.12.8-MMVR\MMVR_chinese.md) 
+
+
+
+##### 简要理解
+
