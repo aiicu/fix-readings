@@ -367,7 +367,7 @@ AI翻译：[V2X-ViT_chinese](2025.12.7-V2X-ViT\V2X-ViT_chinese.md)
 
 论文： [MMVR.pdf](2025.12.8-MMVR\MMVR.pdf) 
 
-AI+个人修正详细理解： [MMVR-reading](2025.12.8-MMVR\reading)
+AI+个人修正详细理解： [MMVR-reading](2025.12.8-MMVR\reading.md)
 
 AI翻译：[MMVR_chinese](2025.12.8-MMVR\MMVR_chinese.md) 
 
@@ -398,11 +398,36 @@ AI翻译：[MMVR_chinese](2025.12.8-MMVR\MMVR_chinese.md)
 
 论文： [DAIR-V2X.pdf](2025.12.11-DAIR-V2X\DAIR-V2X.pdf) 
 
-AI+个人修正详细理解： [MMVR-reading](2025.12.8-MMVR\reading)
+AI+个人修正详细理解： [DAIR-V2X-reading](2025.12.11-DAIR-V2X\reading.md)
 
-AI翻译：[MMVR_chinese](2025.12.8-MMVR\MMVR_chinese.md) 
+AI翻译：[DAIR-V2X_chinese](2025.12.11-DAIR-V2X\DAIR-V2X_chinese.md) 
 
 
 
 ##### 简要理解
 
+- 制作真实场景**数据集 DAIR-V2X**，多模态多视角，LiDAR点云+拍摄图像，有3D标注框，10类，具体制作过程看3.2节
+- 提出 Vehicle-Infrastructure Cooperative 3D Object Detection problem (**VIC3D**) ，形式化目标识别任务
+  - 输入：车辆帧（捕捉时间 $t_v$ ）+基础设施帧（捕捉时间 $t_i$），发送时的相对姿态，由于信息传输，一般 $t_i<t_v$
+  - 真值：目标的3D信息，位置类别方向等，按车辆与基础设施数据的时间情况分类
+    - 同步情况：车辆真值+基础设施真值
+    - 异步情况：不能使用基础设施真值，如果有同步的基础设施信息，可以用它的真值，否则只能用车辆真值
+  - 指标：AP（平均精度）+AB（平均字节数，衡量传输成本）
+- 提出 Time Compensation Late Fusion (**TCLF**) ，晚期融合，**解决数据时间异步问题**
+  - 使用两个相邻基础设施帧估计目标的速度，然后估计基础设施目标在 $t_{v}$ 时的状态，后面就是正常的晚期融合
+
+
+
+#### COˆ3
+
+##### 文档
+
+论文： [COˆ3.pdf](2025.12.13-COˆ3\COˆ3.pdf) 
+
+AI+个人修正详细理解： [COˆ3-reading](2025.12.13-COˆ3\reading.md)
+
+AI翻译：[COˆ3_chinese](2025.12.13-COˆ3\COˆ3_chinese.md) 
+
+
+
+##### 简要理解
